@@ -1,17 +1,27 @@
-import { FormEvent } from "react";
-
+import {Dispatch, FormEvent, SetStateAction, useEffect} from "react";
+//components
+import Error from "./Error";
+// hook
 import { useForm } from '../hooks/useForm'
 import { useToggle } from "../hooks/useToggle";
-
+// interfaces
 import { Appointment } from "../interfaces/appointment";
+//utils
+import {generateId} from "../utils/utils";
 
 interface Props {
-  setPatients: (appointment:Appointment) =>void
+  setPatients: Dispatch<SetStateAction<Appointment[]>>
+  patient:Appointment | undefined,
+  setPatient: Dispatch<SetStateAction<Appointment | undefined>>
 }
 
-const Form = ( { setPatients }:Props ) => {
-  const { formValue, handleInputChanged, resetForm } = useForm()
+const Form = ( { setPatients, patient, setPatient }:Props ) => {
+  const { formValue, handleInputChanged, resetForm, changeTextFields } = useForm()
   const [ error, setError ] = useToggle()
+
+  useEffect(()=>{
+    if(patient) changeTextFields(patient)
+  },[patient])
 
   const { name,description,email,owner,register }:Appointment = formValue
 
@@ -19,10 +29,20 @@ const Form = ( { setPatients }:Props ) => {
     e.preventDefault()
     if( [name,description,email,owner,register].includes('') ) return setError(true)
     setError(false)
-    setPatients(formValue)
+    setPatients( appointment=>modifyPatientList(appointment))
+    setPatient(undefined)
     resetForm()
-
   }
+
+  const modifyPatientList = (listAppointments:Appointment[]):(Appointment)[] =>{
+    if( patient )
+      return listAppointments.map((appointment =>{
+      if(appointment.id === patient.id) return {...appointment, ...formValue}
+      else return appointment
+    }))
+    else return [...listAppointments, {...formValue, id:generateId()}]
+  }
+
 
   return (
       <div className="md:w-1/2 lg:w/5">
@@ -33,11 +53,7 @@ const Form = ( { setPatients }:Props ) => {
         </p>
         <form onSubmit={ handleSubmit } className="bg-white shadow-md rounded-lg py-10 px-5">
           {
-            error && (
-                <div className="bg-red-800 text-white text-center p-3 uppercase font-bold mb-5 rounded">
-                  <p>Los campos estan incompletos</p>
-                </div>
-              )
+            error && <Error title="Todos los compos obligatorios" />
           }
           <div className="mb-5">
             <label htmlFor="name" className="block font-bold uppercase">Nombre Mascota</label>
@@ -87,7 +103,7 @@ const Form = ( { setPatients }:Props ) => {
             <label htmlFor="description" className="block font-bold uppercase">Descripcion de los sintomas</label>
             <textarea value={description} onChange={handleInputChanged} name="description" id="description" cols={70} rows={6} placeholder="Descripcion de los sintomas"/>
           </div>
-          <input className="bg-indigo-600 w-full p-3 text-white uppercase font-bold hover:bg-indigo-700 cursor-pointer transition-colors" type="submit" value="Agregar Paciente" />
+          <input className="bg-indigo-600 w-full p-3 text-white uppercase font-bold hover:bg-indigo-700 cursor-pointer transition-colors" type="submit" value={patient ? "Editar Paciente" : "Agregar Paciente"} />
         </form>
       </div>
   );

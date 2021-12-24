@@ -26,6 +26,10 @@ export const useForm = () => {
     setFormValue(initialState)
   }
 
-  return { formValue, handleInputChanged, resetForm }
+  const changeTextFields = (inputsValue:Appointment) =>{
+    setFormValue(inputsValue)
+  }
+
+  return { formValue, handleInputChanged, resetForm, changeTextFields }
 }
 
